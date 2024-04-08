@@ -18,12 +18,19 @@ client_openai.api_key = os.getenv("OPENAI_API_KEY")
 client_anthropic = Anthropic()
 client_anthropic.api_key = os.getenv("ANTHROPIC_API_KEY")
 
-file_path = 'robustness_test.xlsx'
+request_date = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+file_path = f'./result/robustness_test_1_kor_{request_date}.xlsx'
 model_gpt_35_0613="gpt-3.5-turbo-0613"
 model_gpt_35_0125="gpt-3.5-turbo-0125"
 model_claude_sonnet = "claude-3-sonnet-20240229"
 model_claude_haiku = "claude-3-haiku-20240307"
 model_gemini_pro = "gemini-1.0-pro"
+
+
+user_prompt_content_list_1_kor, user_prompt_style_list_1_kor = json.load(open('./data/robustness_test_1_kor.json', 'r')).values()
+# user_prompt_content_list_1_eng, user_prompt_style_list_1_eng = json.load(open('./data/robustness_test_1_eng.json', 'r')).values()
+# user_prompt_content_list_1_2, user_prompt_style_list_1_2 = json.load(open('./data/robustness_test_1_2.json', 'r')).values()
 
 def paraphrase_question(seed_content: str, 
                         seed_style: str, 
@@ -239,7 +246,6 @@ def conduct_test(user_prompt_content_list: List[Text],
     """
     Conduct a test using OpenAI's GPT-3.5 engine.
     """
-    request_date = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     for i, user_prompt_content in enumerate(user_prompt_content_list):
         for j, user_prompt_style in enumerate(user_prompt_style_list):
