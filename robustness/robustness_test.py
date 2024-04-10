@@ -28,9 +28,9 @@ model_claude_haiku = "claude-3-haiku-20240307"
 model_gemini_pro = "gemini-1.0-pro"
 
 
-user_prompt_content_list_1_kor, user_prompt_style_list_1_kor = json.load(open('./data/robustness_test_1_kor.json', 'r')).values()
-# user_prompt_content_list_1_eng, user_prompt_style_list_1_eng = json.load(open('./data/robustness_test_1_eng.json', 'r')).values()
-# user_prompt_content_list_1_2, user_prompt_style_list_1_2 = json.load(open('./data/robustness_test_1_2.json', 'r')).values()
+user_prompt_content_list_1_kor_1, user_prompt_style_list_1_kor_1 = json.load(open('./data/robustness_test_1_kor_1.json', 'r')).values()
+# user_prompt_content_list_1_eng_1, user_prompt_style_list_1_eng_1 = json.load(open('./data/robustness_test_1_eng_1.json', 'r')).values()
+# user_prompt_content_list_1_kor_2, user_prompt_style_list_1_kor_2 = json.load(open('./data/robustness_test_1_kor_2.json', 'r')).values()
 
 def paraphrase_question(seed_content: str, 
                         seed_style: str, 
