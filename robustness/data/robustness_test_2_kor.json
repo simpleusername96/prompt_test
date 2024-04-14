@@ -1,0 +1,16 @@
+{
+  "var_list": {
+    "numbers_list": [
+      ["3", "1", "5"],
+      ["4", "3", "6"],
+      ["5", "5", "7"]
+    ],
+    "fruits_list": [
+      ["사과", "배", "수박", "귤"],
+      ["배", "사과", "귤", "수박"],
+      ["수박", "귤", "사과", "배"]
+    ],
+    "names_list": ["철수", "영희", "은하"]
+  },
+  "user_prompt_content": "식탁 위에 <fruits_list0> <numbers_list0>개, <fruits_list1> 1개가 있습니다.\n<names_list0>가 식탁에 있던 <fruits_list0> <numbers_list1>개를 먹고, 그 자리에 <fruits_list2> 사진 1장을 올려두었습니다.\n이 과정에서 <fruits_list1> 1개가 땅으로 굴러떨어졌습니다.\n<names_list0>가 식탁에 <fruits_list3> <numbers_list2>개와 양초 5개를 올려놓았습니다.\n식탁 위에 남아있는 과일은 총 몇 개인가요?"
+}
