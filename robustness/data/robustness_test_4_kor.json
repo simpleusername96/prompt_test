@@ -1,0 +1,14 @@
+{
+  "var_list": {
+    "ate_fruits_num_list": [
+      "4","5","6"
+    ],
+    "days_list": [
+      "2 days ago", "3 days ago", "4 days ago"
+    ],
+    "fruits_name_list": [
+      "bananas", "oranges", "grapes"
+    ]
+  },
+  "user_prompt_content": "I have 5 <fruits_name_list0> now, i ate <ate_fruits_num_list0> <days_list0>. How many do i have now?"
+}
