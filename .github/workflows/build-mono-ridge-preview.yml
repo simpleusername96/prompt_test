@@ -1,0 +1,149 @@
+name: Build mono theme pack preview
+
+on:
+  push:
+    branches:
+      - experiment/mono-ridge-apk-preview-20260820
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.10.2"
+
+      - name: Install mobile platform packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdkmanager_path="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$sdkmanager_path" ]; then
+            sdkmanager_path="$(command -v sdkmanager)"
+          fi
+          yes | "$sdkmanager_path" --licenses >/dev/null || true
+          "$sdkmanager_path" "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Restore source project
+        shell: bash
+        run: |
+          set -euo pipefail
+          payload_dir="$GITHUB_WORKSPACE/theme-pack-apk-preview/payload"
+          archive="$RUNNER_TEMP/mono-ridge-project.zip"
+          root="$RUNNER_TEMP/mono-ridge-source"
+          cat "$payload_dir"/project.part-*.b64 | base64 --decode > "$archive"
+          unzip -t "$archive"
+          mkdir -p "$root"
+          unzip -q "$archive" -d "$root"
+          test -f "$root/mono_ridge_pack_project_text/build_spec.json"
+          echo "PROJECT_DIR=$root/mono_ridge_pack_project_text" >> "$GITHUB_ENV"
+
+      - name: Build release package
+        shell: bash
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          gradle --no-daemon --stacktrace :app:assembleRelease
+
+      - name: Inspect and package outputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          project="$PROJECT_DIR"
+          source_apk="$project/app/build/outputs/apk/release/app-release.apk"
+          dist="$GITHUB_WORKSPACE/theme-pack-apk-preview/dist"
+          output="$dist/mono-ridge-pack-preview.apk"
+          build_tools="$ANDROID_HOME/build-tools/35.0.0"
+
+          test -s "$source_apk"
+          mkdir -p "$dist"
+          cp "$source_apk" "$output"
+
+          "$build_tools/apksigner" verify --verbose --print-certs "$output" \
+            | tee "$dist/signature_report.txt"
+          "$build_tools/aapt" dump badging "$output" \
+            | tee "$dist/package_badging.txt"
+          "$build_tools/aapt" dump permissions "$output" \
+            | tee "$dist/package_permissions.txt"
+          "$build_tools/aapt" dump xmltree "$output" AndroidManifest.xml \
+            > "$dist/manifest_tree.txt"
+          zipinfo -1 "$output" > "$dist/package_entries.txt"
+
+          grep -q "package: name='com.example.monoridgepack'" "$dist/package_badging.txt"
+          grep -q "versionName='0.1.0'" "$dist/package_badging.txt"
+          grep -q "application-label:'Mono Ridge Pack'" "$dist/package_badging.txt"
+          grep -q "sdkVersion:'26'" "$dist/package_badging.txt"
+          grep -q "targetSdkVersion:'35'" "$dist/package_badging.txt"
+          grep -q "android.permission.SET_WALLPAPER" "$dist/package_permissions.txt"
+          if grep -q "android.permission.INTERNET" "$dist/package_permissions.txt"; then
+            echo "Unexpected network permission found." >&2
+            exit 1
+          fi
+          grep -q "MainActivity" "$dist/manifest_tree.txt"
+          grep -q "ClockWidgetProvider" "$dist/manifest_tree.txt"
+
+          expected=(
+            wallpaper_home wallpaper_lock wallpaper_aod pack_preview
+            icon_phone icon_messages icon_browser icon_camera
+            icon_gallery icon_calendar icon_files icon_mail
+            icon_maps icon_music icon_notes icon_settings
+            icon_store icon_video icon_clock icon_assistant
+          )
+          for name in "${expected[@]}"; do
+            grep -q "$name" "$dist/package_entries.txt"
+          done
+
+          sha256sum "$output" > "$dist/SHA256SUMS.txt"
+          cert_sha256="$(grep -m1 "Signer #1 certificate SHA-256 digest:" "$dist/signature_report.txt" | sed 's/.*: //')"
+          apk_sha256="$(cut -d' ' -f1 "$dist/SHA256SUMS.txt")"
+          apk_size="$(stat -c '%s' "$output")"
+
+          cat > "$dist/build_report.txt" <<REPORT
+          MONO RIDGE PACK PREVIEW — BUILD REPORT
+
+          Build status: PASS
+          Package file: mono-ridge-pack-preview.apk
+          Package identifier: com.example.monoridgepack
+          App label: Mono Ridge Pack
+          Version name: 0.1.0
+          Version code: 1
+          Minimum API: 26
+          Target API: 35
+          Wallpaper permission: PRESENT
+          Network permission: ABSENT
+          Launcher activity: PRESENT
+          Clock widget provider: PRESENT
+          Wallpaper resources: 3 PRESENT
+          Icon resources: 16 PRESENT
+          Package signature: VERIFIED
+          Certificate SHA-256: $cert_sha256
+          APK SHA-256: $apk_sha256
+          APK size in bytes: $apk_size
+          Physical device installation: NOT TESTED
+
+          This preview package uses a development signing key. It is suitable for private testing, not store publication.
+          REPORT
+
+      - name: Upload preview package
+        uses: actions/upload-artifact@v4
+        with:
+          name: mono-ridge-pack-preview
+          path: theme-pack-apk-preview/dist/*
+          if-no-files-found: error
+          retention-days: 7
