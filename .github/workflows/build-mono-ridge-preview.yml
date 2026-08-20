@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - experiment/mono-ridge-apk-preview-20260820
+  pull_request:
+    branches:
+      - master
   workflow_dispatch:
 
 permissions:
